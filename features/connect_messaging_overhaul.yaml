@@ -1,0 +1,110 @@
+name: "Connect Messaging Overhaul"
+description: "Redesign of patient portal messaging in Ava Connect including auto-release policy changes, new messaging tier, caregiver consent requirements, confidential note handling, MOA permission expansion, and Connect API version upgrade."
+version: "1.0"
+
+changes:
+  - dimension: "connect_settings"
+    field: "auto_release_days"
+    change_type: "modify"
+    description: "Auto-release default changes from clinic-configured values to a province-wide standard of 14 days. Clinics currently set to 0 (disabled), 30, or 90 days will be overridden. Clinics that intentionally disabled auto-release (0 days) for privacy or workflow reasons will need to apply for an exemption to maintain their current setting."
+    old_value: "clinic_configured"
+    new_value: 14
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "connect_settings"
+    field: "messaging"
+    change_type: "modify"
+    description: "New messaging tier 'team_messaging' inserted between 'one_provider' and 'multiple_providers'. Team messaging allows patients to message a care team (pod) rather than individual providers or all providers. Clinics using one_provider messaging are unaffected. Clinics using multiple_providers will be migrated to team_messaging unless they explicitly opt to remain on multiple_providers."
+    old_value: "one_provider|multiple_providers"
+    new_value: "one_provider|team_messaging|multiple_providers"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "connect_settings"
+    field: "caregiver_access"
+    change_type: "modify"
+    description: "Caregiver access now requires an explicit patient consent workflow. Clinics with caregiver_access enabled must configure a digital consent form and track consent status per patient. Until consent is configured, caregiver access will be suspended. This affects clinics in all provinces but is especially impactful for pediatric and geriatric-focused practices."
+    old_value: true
+    new_value: "true_with_consent_workflow"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: ["patient_summary"]
+    permission_changes: {}
+
+  - dimension: "scribe_settings"
+    field: "confidential_toggle"
+    change_type: "modify"
+    description: "The confidential toggle now interacts with Connect auto-release. When a note is marked confidential (confidential_toggle = true on the note), that note will never auto-release to the patient portal regardless of the auto_release_days setting. Clinics using both Scribe confidential toggle and Connect auto-release must inform providers of this behavioral change."
+    old_value: "confidential_hides_in_chart"
+    new_value: "confidential_blocks_auto_release"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_scribe", "ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "role_permissions"
+    field: "moa"
+    change_type: "modify"
+    description: "MOAs gain the new permission 'manage_messaging_settings' allowing them to configure patient messaging preferences, manage team assignments for team_messaging, and handle caregiver consent workflows. Previously only admins could modify these settings."
+    old_value: null
+    new_value: "manage_messaging_settings"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes:
+      moa: "add manage_messaging_settings"
+
+  - dimension: "integrations"
+    field: "connect_api"
+    change_type: "modify"
+    description: "Connect API upgraded from v1 to v2. All clinics using Ava Connect must reconfigure their portal integration endpoints. Third-party systems that consume Connect API data (lab result delivery, appointment reminders) must update their integration. The v1 API will be sunset 90 days after v2 launch."
+    old_value: "connect_api_v1"
+    new_value: "connect_api_v2"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "scheduling"
+    field: "pods"
+    change_type: "modify"
+    description: "Pod configuration now directly maps to team_messaging groups. Clinics with pods enabled will have their pod structure used as the default team_messaging routing. Clinics without pods that want team_messaging must either enable pods or manually configure messaging teams. This creates a new dependency between scheduling pods and Connect messaging."
+    old_value: "pods_scheduling_only"
+    new_value: "pods_scheduling_and_messaging"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "connect_settings"
+    field: "auto_release_days"
+    change_type: "add"
+    description: "New per-provider auto-release override capability. Individual providers can set their own auto-release window that differs from the clinic default (14 days). This requires the admin role to have a new 'manage_provider_overrides' permission. Solo clinics are unaffected since clinic and provider settings are equivalent."
+    old_value: null
+    new_value: "per_provider_override"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_connect"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes:
+      admin: "add manage_provider_overrides"

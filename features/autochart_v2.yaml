@@ -1,0 +1,109 @@
+name: "AutoChart V2 Upgrade"
+description: "Major version upgrade to AutoChart introducing new extraction categories, renaming existing ones, tighter Scribe integration with automatic post-note execution, Document Classifier dependency, and AI model requirements for new capabilities."
+version: "1.0"
+
+changes:
+  - dimension: "autochart_settings"
+    field: "enabled_categories"
+    change_type: "add"
+    description: "Two new AutoChart extraction categories added: 'lab_results' and 'vitals'. These categories extract structured lab values and vital sign measurements from clinical notes. Both require the advanced AI model for reliable extraction accuracy."
+    old_value: null
+    new_value: ["lab_results", "vitals"]
+    affects_provinces: "all"
+
+    requires_modules: ["autochart", "ava_scribe"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "autochart_settings"
+    field: "enabled_categories"
+    change_type: "rename"
+    description: "The 'reminders' extraction category is renamed to 'preventive_care' to better reflect its expanded scope. All clinics with 'reminders' enabled will be migrated automatically, but any custom note stencils, macros, or API consumers referencing the 'reminders' field name will break."
+    old_value: "reminders"
+    new_value: "preventive_care"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart"]
+    requires_integrations: []
+    breaks_templates: ["chronic_disease_review", "annual_physical_exam", "wellness_check", "well_baby_visit"]
+    permission_changes: {}
+
+  - dimension: "modules"
+    field: "autochart"
+    change_type: "modify"
+    description: "AutoChart V2 now runs automatically after Scribe generates a clinical note, replacing the previous manual trigger. This creates a hard dependency: if autochart is enabled, ava_scribe must also be enabled. Clinics with autochart but without ava_scribe will have AutoChart disabled until Scribe is activated."
+    old_value: "autochart_standalone"
+    new_value: "autochart_requires_scribe"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart", "ava_scribe"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "templates"
+    field: "custom_note_stencils"
+    change_type: "modify"
+    description: "Custom note stencils that include an AutoChart 'reminders' data binding must be updated to reference 'preventive_care' instead. Stencils with the old field name will render an empty section rather than failing outright, causing silent data loss for clinicians relying on reminder prompts."
+    old_value: "reminders"
+    new_value: "preventive_care"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart"]
+    requires_integrations: []
+    breaks_templates: ["chronic_disease_review", "annual_physical_exam", "wellness_check", "well_baby_visit", "prenatal_visit"]
+    permission_changes: {}
+
+  - dimension: "modules"
+    field: "document_classifier"
+    change_type: "modify"
+    description: "Document Classifier now feeds classified documents into AutoChart for extraction. When both modules are enabled, incoming faxes and scanned documents are automatically classified and then processed by AutoChart. This changes the document workflow pipeline and may increase processing time for high-volume clinics."
+    old_value: "document_classifier_standalone"
+    new_value: "document_classifier_feeds_autochart"
+    affects_provinces: "all"
+
+    requires_modules: ["document_classifier", "autochart"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "scribe_settings"
+    field: "ai_model"
+    change_type: "modify"
+    description: "The new AutoChart categories (lab_results, vitals) and the enhanced preventive_care category require the advanced AI model. Clinics using the standard model will only have access to the legacy categories (medical_histories, social_histories, prescriptions, consult_requests). Upgrading to advanced model increases per-note processing cost."
+    old_value: "standard"
+    new_value: "advanced"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart", "ava_scribe"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "role_permissions"
+    field: "physician"
+    change_type: "modify"
+    description: "Physicians gain a new permission 'review_autochart_extractions' that allows them to review, approve, or reject AutoChart-extracted data before it is committed to the patient chart. This is mandatory in V2 and cannot be removed from the physician role."
+    old_value: null
+    new_value: "review_autochart_extractions"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes:
+      physician: "add review_autochart_extractions (mandatory, cannot be removed)"
+
+  - dimension: "scheduling"
+    field: "appointment_types"
+    change_type: "add"
+    description: "A new appointment type 'autochart_review' is available for clinics that want dedicated time slots for physicians to review accumulated AutoChart extractions. This is optional but recommended for clinics processing more than 50 notes per day."
+    old_value: null
+    new_value: "autochart_review"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}

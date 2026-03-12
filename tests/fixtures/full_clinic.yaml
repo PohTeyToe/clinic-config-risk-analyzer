@@ -1,0 +1,114 @@
+name: "Full Test Clinic"
+province: AB
+clinic_type: multi_provider
+provider_count: 5
+providers: [MD, MD, MD, MD, MD]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - autochart
+  - prescribeit
+  - document_classifier
+  - pcpcm_billing_advisor
+  - patient_care_plan
+
+connect_settings:
+  auto_release_days: 30
+  messaging: multiple_providers
+  caregiver_access: true
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: true
+  personalized_instructions: true
+  templates:
+    - soap_standard
+    - wellness_check
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - reminders
+    - prescriptions
+    - consult_requests
+
+billing:
+  - ab_health
+  - wcb
+  - private
+
+integrations:
+  - netcare
+  - prescribeit
+  - edelivery
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - annual_physical
+    - well_baby
+    - procedures
+  pods: true
+  rooms_view: true
+  locum_sessions: true
+  qr_checkin: true
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - manage_care_plans
+    - approve_documents
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - manage_care_plans
+    - view_schedule
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+  admin:
+    - view_all_charts
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+    - system_configuration
+    - audit_logs
+
+templates:
+  custom_note_stencils:
+    - annual_physical_exam
+    - well_baby_visit
+    - chronic_disease_review
+    - medication_review
+  letter_stencils:
+    - referral_letter
+    - patient_summary
+  pdf_forms:
+    - wcb_initial_report
+    - drivers_medical
+  macros:
+    - vitals_normal
+    - ros_negative
+    - msk_exam_normal
+  aliases:
+    - bp_normal
+    - bmi_calc
+
+panelling:
+  cpar_enabled: true
+  cpar_mode: automatic

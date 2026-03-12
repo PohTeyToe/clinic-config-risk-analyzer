@@ -1,0 +1,200 @@
+# Clinic Configuration Schema
+# Defines every configuration dimension with valid values and province constraints.
+# Used by the conflict detector to validate clinic configs against feature changes.
+
+dimensions:
+  province:
+    type: enum
+    values: [AB, BC, ON]
+    description: "Operating province -- determines billing, integrations, and regulatory requirements"
+
+  clinic_type:
+    type: enum
+    values: [family, walk_in, specialist, multi_provider, solo, np_led]
+    description: "Clinic operational model"
+
+  provider_count:
+    type: integer
+    min: 1
+    max: 50
+    description: "Total number of providers (physicians, NPs, specialists)"
+
+  providers:
+    type: list
+    item_type: enum
+    values: [MD, NP, specialist]
+    description: "Provider types present at the clinic"
+
+  modules:
+    type: list
+    item_type: enum
+    values:
+      - ava_connect
+      - ava_scribe
+      - autochart
+      - prescribeit
+      - document_classifier
+      - pcpcm_billing_advisor
+      - patient_care_plan
+    description: "Enabled Ava platform modules"
+
+  connect_settings:
+    type: object
+    fields:
+      auto_release_days:
+        type: enum
+        values: [0, 14, 30, 90]
+        description: "Days before notes auto-release to patient portal (0 = disabled)"
+      messaging:
+        type: enum
+        values: [none, one_provider, multiple_providers]
+        description: "Patient messaging permissions"
+      caregiver_access:
+        type: boolean
+        description: "Whether caregiver/family access is enabled"
+    requires_module: ava_connect
+
+  scribe_settings:
+    type: object
+    fields:
+      ai_model:
+        type: enum
+        values: [standard, advanced]
+        description: "AI model selection for note generation"
+      confidential_toggle:
+        type: boolean
+        description: "Whether confidential note toggle is available"
+      personalized_instructions:
+        type: boolean
+        description: "Whether provider-specific instructions are configured"
+      templates:
+        type: list
+        item_type: string
+        description: "Custom Scribe note templates"
+    requires_module: ava_scribe
+
+  autochart_settings:
+    type: object
+    fields:
+      enabled_categories:
+        type: list
+        item_type: enum
+        values:
+          - medical_histories
+          - social_histories
+          - reminders
+          - prescriptions
+          - consult_requests
+        description: "AutoChart extraction categories enabled"
+    requires_module: autochart
+
+  billing:
+    type: list
+    item_type: enum
+    values:
+      - ab_health
+      - bc_msp
+      - icbc
+      - wcb
+      - wsbc
+      - private
+      - out_of_province
+      - refugee
+    province_constraints:
+      ab_health: [AB]
+      bc_msp: [BC]
+      icbc: [BC]
+      wcb: [AB]
+      wsbc: [BC]
+      private: [AB, BC, ON]
+      out_of_province: [AB, BC, ON]
+      refugee: [AB, BC, ON]
+
+  integrations:
+    type: list
+    item_type: enum
+    values:
+      - netcare
+      - pharmanet
+      - prescribeit
+      - edelivery
+      - srfax
+      - efax
+      - alethea
+      - connect_care
+    province_constraints:
+      netcare: [AB]
+      pharmanet: [BC]
+      connect_care: [AB]
+      alethea: [BC]
+      prescribeit: [AB, BC, ON]
+      edelivery: [AB, BC]
+      srfax: [AB, BC, ON]
+      efax: [AB, BC, ON]
+
+  scheduling:
+    type: object
+    fields:
+      appointment_types:
+        type: list
+        item_type: string
+      pods:
+        type: boolean
+        description: "Pod-based provider grouping"
+      rooms_view:
+        type: boolean
+        description: "Room-based scheduling view"
+      locum_sessions:
+        type: boolean
+        description: "Support for locum/substitute providers"
+      qr_checkin:
+        type: boolean
+        description: "QR code patient self-check-in"
+
+  role_permissions:
+    type: object
+    fields:
+      physician:
+        type: list
+        item_type: string
+      nurse:
+        type: list
+        item_type: string
+      moa:
+        type: list
+        item_type: string
+      admin:
+        type: list
+        item_type: string
+
+  templates:
+    type: object
+    fields:
+      custom_note_stencils:
+        type: list
+        item_type: string
+      letter_stencils:
+        type: list
+        item_type: string
+      pdf_forms:
+        type: list
+        item_type: string
+      macros:
+        type: list
+        item_type: string
+      aliases:
+        type: list
+        item_type: string
+
+  panelling:
+    type: object
+    fields:
+      cpar_enabled:
+        type: boolean
+        description: "CPAR panelling automation (AB only)"
+      cpar_mode:
+        type: enum
+        values: [automatic, manual]
+        description: "CPAR submission mode"
+    province_constraints:
+      cpar_enabled: [AB]

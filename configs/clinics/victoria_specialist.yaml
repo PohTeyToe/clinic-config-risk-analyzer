@@ -1,0 +1,91 @@
+# Victoria Specialist Clinic - BC specialist, no connect, complex billing
+name: "Victoria Specialist Clinic"
+province: BC
+clinic_type: specialist
+provider_count: 2
+providers: [specialist, specialist]
+
+modules:
+  - ava_scribe
+  - autochart
+  - document_classifier
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: true
+  personalized_instructions: false
+  templates:
+    - specialist_report
+    - consult_letter
+
+autochart_settings:
+  enabled_categories:
+    - consult_requests
+    - medical_histories
+
+billing:
+  - bc_msp
+  - wsbc
+  - private
+
+integrations:
+  - pharmanet
+  - alethea
+  - efax
+
+scheduling:
+  appointment_types:
+    - initial_consult
+    - follow_up_consult
+    - procedure
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - dictate_letters
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - prepare_consult_packages
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+    - manage_referral_queue
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+
+templates:
+  custom_note_stencils:
+    - specialist_consult_note
+    - procedure_note
+    - follow_up_assessment
+  letter_stencils:
+    - consult_response_letter
+    - referral_acknowledgment
+    - discharge_letter
+  pdf_forms:
+    - wsbc_specialist_report
+    - procedure_consent
+  macros:
+    - consult_header
+    - impression_plan
+  aliases:
+    - consult_cc

@@ -1,0 +1,116 @@
+# Lethbridge Multi-Provider Clinic - AB multi-provider with CPAR and doc classifier
+name: "Lethbridge Multi-Provider Clinic"
+province: AB
+clinic_type: multi_provider
+provider_count: 6
+providers: [MD, MD, MD, MD, NP, NP]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - autochart
+  - prescribeit
+  - document_classifier
+  - pcpcm_billing_advisor
+
+connect_settings:
+  auto_release_days: 14
+  messaging: multiple_providers
+  caregiver_access: false
+
+scribe_settings:
+  ai_model: standard
+  confidential_toggle: true
+  personalized_instructions: false
+  templates:
+    - soap_standard
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - reminders
+    - prescriptions
+    - consult_requests
+
+billing:
+  - ab_health
+  - wcb
+  - private
+
+integrations:
+  - netcare
+  - prescribeit
+  - edelivery
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - annual_physical
+    - follow_up
+    - walk_in
+    - procedures
+    - np_visit
+  pods: true
+  rooms_view: true
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - approve_documents
+    - manage_inbox
+    - order_labs
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - view_schedule
+    - triage_patients
+    - administer_medications
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+    - manage_waitlist
+    - manage_referral_queue
+    - handle_phone_messages
+  admin:
+    - view_all_charts
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+    - system_configuration
+    - audit_logs
+
+templates:
+  custom_note_stencils:
+    - standard_encounter
+    - np_assessment
+    - procedure_note
+  letter_stencils:
+    - referral_letter
+    - patient_summary
+  pdf_forms:
+    - wcb_initial_report
+  macros:
+    - vitals_normal
+    - ros_negative
+  aliases:
+    - bp_normal
+
+panelling:
+  cpar_enabled: true
+  cpar_mode: automatic

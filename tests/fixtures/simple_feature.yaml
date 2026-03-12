@@ -1,0 +1,28 @@
+name: "Simple Test Feature"
+description: "A minimal feature with two changes for testing."
+version: "0.1"
+
+changes:
+  - dimension: "scribe_settings"
+    field: "templates"
+    change_type: "rename"
+    description: "Rename the medications field to prescriptions_list in scribe templates."
+    old_value: "medications"
+    new_value: "prescriptions_list"
+    affects_provinces: "all"
+    requires_modules: ["ava_scribe"]
+    requires_integrations: []
+    breaks_templates: ["soap_standard"]
+    permission_changes: {}
+
+  - dimension: "billing"
+    field: "ab_health"
+    change_type: "modify"
+    description: "Update AB Health billing code for medication review visits."
+    old_value: "03.05A"
+    new_value: "03.05B"
+    affects_provinces: ["AB"]
+    requires_modules: []
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}

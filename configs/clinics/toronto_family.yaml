@@ -1,0 +1,72 @@
+# Toronto Family Health Centre - ON family clinic, limited integrations
+name: "Toronto Family Health Centre"
+province: ON
+clinic_type: family
+provider_count: 3
+providers: [MD, MD, MD]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - prescribeit
+
+connect_settings:
+  auto_release_days: 30
+  messaging: one_provider
+  caregiver_access: false
+
+scribe_settings:
+  ai_model: standard
+  confidential_toggle: false
+  personalized_instructions: false
+  templates:
+    - soap_standard
+
+billing:
+  - private
+  - out_of_province
+
+integrations:
+  - prescribeit
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - follow_up
+    - annual_physical
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - view_billing
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+
+templates:
+  custom_note_stencils:
+    - standard_encounter
+  letter_stencils:
+    - referral_letter
+  pdf_forms: []
+  macros:
+    - vitals_normal
+  aliases: []

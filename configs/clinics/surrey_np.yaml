@@ -1,0 +1,89 @@
+# Surrey NP-Led Clinic - BC NP practice with care plans
+name: "Surrey NP-Led Clinic"
+province: BC
+clinic_type: np_led
+provider_count: 2
+providers: [NP, NP]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - patient_care_plan
+  - autochart
+
+connect_settings:
+  auto_release_days: 30
+  messaging: one_provider
+  caregiver_access: true
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: false
+  personalized_instructions: true
+  templates:
+    - care_plan_note
+    - chronic_disease_mgmt
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - reminders
+
+billing:
+  - bc_msp
+  - private
+
+integrations:
+  - pharmanet
+  - prescribeit
+  - efax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - care_plan_review
+    - chronic_disease_follow_up
+    - wellness_visit
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_care_plans
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - manage_care_plans
+    - patient_education
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+
+templates:
+  custom_note_stencils:
+    - np_assessment
+    - care_plan_review
+    - chronic_disease_note
+  letter_stencils:
+    - referral_letter
+    - care_plan_summary
+  pdf_forms: []
+  macros:
+    - vitals_normal
+    - care_plan_goals
+  aliases:
+    - chronic_meds_review

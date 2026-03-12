@@ -1,0 +1,103 @@
+# Calgary Specialist Centre - AB specialist clinic, no connect, heavy stencils
+name: "Calgary Specialist Centre"
+province: AB
+clinic_type: specialist
+provider_count: 3
+providers: [specialist, specialist, specialist]
+
+modules:
+  - ava_scribe
+  - autochart
+  - document_classifier
+
+scribe_settings:
+  ai_model: standard
+  confidential_toggle: true
+  personalized_instructions: false
+  templates:
+    - consult_letter
+    - specialist_report
+
+autochart_settings:
+  enabled_categories:
+    - consult_requests
+    - medical_histories
+
+billing:
+  - ab_health
+  - wcb
+  - private
+  - out_of_province
+
+integrations:
+  - netcare
+  - edelivery
+  - srfax
+
+scheduling:
+  appointment_types:
+    - initial_consult
+    - follow_up_consult
+    - procedure
+    - second_opinion
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - dictate_letters
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - prepare_consult_packages
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+    - manage_referral_queue
+    - track_consult_responses
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+
+templates:
+  custom_note_stencils:
+    - consult_request_template
+    - referral_response
+    - specialist_followup
+    - initial_assessment
+    - procedure_note
+    - discharge_summary
+  letter_stencils:
+    - consult_response_letter
+    - referral_acknowledgment
+    - patient_discharge_letter
+    - referring_physician_update
+    - insurance_assessment_letter
+  pdf_forms:
+    - wcb_specialist_report
+    - surgical_consent
+    - pre_op_checklist
+    - procedure_consent
+  macros:
+    - consult_header
+    - impression_plan
+    - specialist_exam_normal
+  aliases:
+    - consult_cc
+    - referral_ack

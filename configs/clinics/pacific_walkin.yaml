@@ -1,0 +1,70 @@
+# Pacific Walk-In Clinic - High-volume BC walk-in, no scribe
+name: "Pacific Walk-In Clinic"
+province: BC
+clinic_type: walk_in
+provider_count: 3
+providers: [MD, MD, NP]
+
+modules:
+  - ava_connect
+  - autochart
+  - prescribeit
+  - document_classifier
+
+connect_settings:
+  auto_release_days: 14
+  messaging: one_provider
+  caregiver_access: false
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - prescriptions
+    - consult_requests
+
+billing:
+  - bc_msp
+  - icbc
+
+integrations:
+  - pharmanet
+  - prescribeit
+  - efax
+
+scheduling:
+  appointment_types:
+    - walk_in
+    - urgent_visit
+  pods: false
+  rooms_view: false
+  locum_sessions: true
+  qr_checkin: true
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+  admin:
+    - manage_users
+    - view_reports
+    - manage_billing
+
+templates:
+  custom_note_stencils:
+    - walkin_encounter
+  letter_stencils: []
+  pdf_forms: []
+  macros:
+    - vitals_normal
+  aliases: []

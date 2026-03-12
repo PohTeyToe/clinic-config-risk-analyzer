@@ -1,0 +1,53 @@
+# Red Deer Solo Practice - Minimal AB solo physician
+name: "Red Deer Solo Practice"
+province: AB
+clinic_type: solo
+provider_count: 1
+providers: [MD]
+
+modules:
+  - ava_scribe
+
+scribe_settings:
+  ai_model: standard
+  confidential_toggle: false
+  personalized_instructions: false
+  templates:
+    - basic_encounter
+
+billing:
+  - ab_health
+
+integrations:
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - follow_up
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+  nurse: []
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+  admin:
+    - manage_users
+    - view_reports
+
+templates:
+  custom_note_stencils: []
+  letter_stencils: []
+  pdf_forms: []
+  macros: []
+  aliases: []

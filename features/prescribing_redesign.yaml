@@ -1,0 +1,108 @@
+name: "Prescribing Workflow Redesign"
+description: "Major overhaul of prescribing workflows including PrescribeIT API upgrade, province-specific formulary validation, template field renames, new nurse permissions, billing code updates, and AutoChart extraction enhancements."
+version: "1.0"
+
+changes:
+  - dimension: "integrations"
+    field: "prescribeit"
+    change_type: "modify"
+    description: "PrescribeIT integration upgraded to v3 API. All clinics using PrescribeIT must reconfigure their integration credentials and endpoint URLs. The old v2 API will be deprecated and cease functioning."
+    old_value: "prescribeit_v2"
+    new_value: "prescribeit_v3"
+    affects_provinces: ["AB", "BC", "ON"]
+
+    requires_integrations: ["prescribeit"]
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "modules"
+    field: "prescribeit"
+    change_type: "modify"
+    description: "Province-specific formulary validation added. AB clinics must validate against the Alberta Drug Benefit List, BC clinics against PharmaCare formulary, and ON clinics against the Ontario Drug Benefit formulary. Each province has different required fields and validation rules."
+    old_value: "universal_formulary"
+    new_value: "province_specific_formulary"
+    affects_provinces: ["AB", "BC", "ON"]
+
+    requires_modules: ["prescribeit"]
+    requires_integrations: ["prescribeit"]
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "scribe_settings"
+    field: "templates"
+    change_type: "rename"
+    description: "All Scribe note templates that reference the 'medications' data field are updated. The field name changes from 'medications' to 'prescriptions_list'. Any custom templates, macros, or aliases that bind to the medications field will break until updated."
+    old_value: "medications"
+    new_value: "prescriptions_list"
+    affects_provinces: "all"
+
+    requires_modules: ["ava_scribe"]
+    requires_integrations: []
+    breaks_templates: ["soap_standard", "chronic_disease_review", "annual_physical_exam", "medication_review"]
+    permission_changes: {}
+
+  - dimension: "role_permissions"
+    field: "nurse"
+    change_type: "modify"
+    description: "Nurses gain a new permission to initiate prescription renewals. This adds 'initiate_rx_renewal' to the nurse role. Clinics with restrictive nurse permission sets must review whether this aligns with their workflow policies and provincial scope-of-practice regulations."
+    old_value: null
+    new_value: "initiate_rx_renewal"
+    affects_provinces: "all"
+
+    requires_modules: ["prescribeit"]
+    requires_integrations: ["prescribeit"]
+    breaks_templates: []
+    permission_changes:
+      nurse: "add initiate_rx_renewal"
+
+  - dimension: "billing"
+    field: "ab_health"
+    change_type: "modify"
+    description: "Alberta Health billing codes updated for prescription-related visits. Code 03.05A (medication review) is replaced by 03.05B (comprehensive prescribing assessment). Clinics using ab_health billing must update their billing templates and any automated billing rules referencing the old code."
+    old_value: "03.05A"
+    new_value: "03.05B"
+    affects_provinces: ["AB"]
+
+    requires_modules: []
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "billing"
+    field: "bc_msp"
+    change_type: "add"
+    description: "New BC MSP billing code 00115 added for pharmacist-physician collaborative prescribing visits. Only available to clinics with PrescribeIT integration active and at least one MD provider. Requires PharmaNet integration for claim validation."
+    old_value: null
+    new_value: "00115"
+    affects_provinces: ["BC"]
+
+    requires_modules: ["prescribeit"]
+    requires_integrations: ["prescribeit", "pharmanet"]
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "autochart_settings"
+    field: "enabled_categories"
+    change_type: "modify"
+    description: "AutoChart prescriptions category enhanced with new extraction fields: dosage_frequency, refill_count, and interaction_warnings. Clinics with the prescriptions category enabled will see additional structured data extracted. Requires the advanced AI model for accurate extraction of the new fields."
+    old_value: "prescriptions"
+    new_value: "prescriptions_enhanced"
+    affects_provinces: "all"
+
+    requires_modules: ["autochart", "ava_scribe"]
+    requires_integrations: []
+    breaks_templates: []
+    permission_changes: {}
+
+  - dimension: "integrations"
+    field: "netcare"
+    change_type: "modify"
+    description: "Netcare integration updated to surface prescription monitoring data (TPP - Tracked Prescription Program) directly in the prescribing workflow. AB clinics with Netcare must accept new data-sharing consent terms. Clinics without Netcare but with PrescribeIT in AB will see a degraded prescribing experience."
+    old_value: "netcare_standard"
+    new_value: "netcare_with_tpp"
+    affects_provinces: ["AB"]
+
+    requires_modules: ["prescribeit"]
+    requires_integrations: ["netcare", "prescribeit"]
+    breaks_templates: []
+    permission_changes: {}

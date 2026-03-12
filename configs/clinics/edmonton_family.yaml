@@ -1,0 +1,100 @@
+# Edmonton Family Medical Clinic - AB family clinic with Connect Care
+name: "Edmonton Family Medical Clinic"
+province: AB
+clinic_type: family
+provider_count: 3
+providers: [MD, MD, MD]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - autochart
+  - prescribeit
+
+connect_settings:
+  auto_release_days: 30
+  messaging: one_provider
+  caregiver_access: false
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: true
+  personalized_instructions: true
+  templates:
+    - soap_standard
+    - mental_health_intake
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - prescriptions
+
+billing:
+  - ab_health
+  - wcb
+
+integrations:
+  - netcare
+  - connect_care
+  - prescribeit
+  - edelivery
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - annual_physical
+    - mental_health
+    - follow_up
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+
+templates:
+  custom_note_stencils:
+    - mental_health_follow_up
+    - chronic_disease_review
+    - preventive_health_screen
+  letter_stencils:
+    - referral_letter
+    - patient_summary
+  pdf_forms:
+    - wcb_initial_report
+  macros:
+    - vitals_normal
+    - ros_negative
+    - mental_status_exam_normal
+  aliases:
+    - bp_normal
+    - phq9_score
+
+panelling:
+  cpar_enabled: true
+  cpar_mode: manual

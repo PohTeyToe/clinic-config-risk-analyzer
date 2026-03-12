@@ -1,0 +1,55 @@
+# Ottawa Walk-In Centre - Minimal ON walk-in
+name: "Ottawa Walk-In Centre"
+province: ON
+clinic_type: walk_in
+provider_count: 2
+providers: [MD, MD]
+
+modules:
+  - ava_connect
+  - prescribeit
+
+connect_settings:
+  auto_release_days: 14
+  messaging: none
+  caregiver_access: false
+
+billing:
+  - private
+
+integrations:
+  - prescribeit
+  - srfax
+
+scheduling:
+  appointment_types:
+    - walk_in
+    - urgent_visit
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: true
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+  admin:
+    - manage_users
+    - view_reports
+
+templates:
+  custom_note_stencils: []
+  letter_stencils: []
+  pdf_forms: []
+  macros: []
+  aliases: []

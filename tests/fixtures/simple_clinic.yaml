@@ -1,0 +1,29 @@
+name: "Simple Test Clinic"
+province: AB
+clinic_type: family
+provider_count: 1
+providers: [MD]
+
+modules:
+  - ava_scribe
+
+billing:
+  - ab_health
+
+integrations:
+  - netcare
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+
+templates:
+  custom_note_stencils:
+    - basic_visit

@@ -1,0 +1,86 @@
+# Grande Prairie Family Clinic - Rural AB family practice with refugee billing
+name: "Grande Prairie Family Clinic"
+province: AB
+clinic_type: family
+provider_count: 2
+providers: [MD, MD]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - prescribeit
+  - pcpcm_billing_advisor
+
+connect_settings:
+  auto_release_days: 30
+  messaging: one_provider
+  caregiver_access: false
+
+scribe_settings:
+  ai_model: standard
+  confidential_toggle: true
+  personalized_instructions: false
+  templates:
+    - soap_standard
+    - rural_encounter
+
+billing:
+  - ab_health
+  - out_of_province
+  - refugee
+
+integrations:
+  - netcare
+  - prescribeit
+  - srfax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - follow_up
+    - annual_physical
+    - rural_outreach
+  pods: false
+  rooms_view: false
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - view_billing
+    - submit_billing
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+  admin:
+    - manage_users
+    - manage_billing
+    - view_reports
+
+templates:
+  custom_note_stencils:
+    - rural_encounter_note
+    - refugee_health_assessment
+  letter_stencils:
+    - referral_letter
+  pdf_forms:
+    - refugee_health_form
+  macros:
+    - vitals_normal
+  aliases: []
+
+panelling:
+  cpar_enabled: true
+  cpar_mode: manual

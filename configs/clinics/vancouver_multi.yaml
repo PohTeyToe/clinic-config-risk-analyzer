@@ -1,0 +1,156 @@
+# Vancouver Multi-Provider Medical Centre - Large BC clinic, all modules, complex permissions
+name: "Vancouver Multi-Provider Medical Centre"
+province: BC
+clinic_type: multi_provider
+provider_count: 8
+providers: [MD, MD, MD, MD, MD, NP, NP, specialist]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - autochart
+  - prescribeit
+  - document_classifier
+  - pcpcm_billing_advisor
+  - patient_care_plan
+
+connect_settings:
+  auto_release_days: 90
+  messaging: multiple_providers
+  caregiver_access: true
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: true
+  personalized_instructions: true
+  templates:
+    - soap_standard
+    - wellness_check
+    - mental_health_intake
+    - pediatric_visit
+    - chronic_disease_mgmt
+    - care_plan_note
+    - procedure_note
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - reminders
+    - prescriptions
+    - consult_requests
+
+billing:
+  - bc_msp
+  - wsbc
+  - private
+
+integrations:
+  - pharmanet
+  - prescribeit
+  - edelivery
+  - efax
+  - alethea
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - annual_physical
+    - walk_in
+    - mental_health
+    - prenatal
+    - well_baby
+    - procedures
+    - specialist_consult
+    - np_visit
+  pods: true
+  rooms_view: true
+  locum_sessions: true
+  qr_checkin: true
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - manage_care_plans
+    - approve_documents
+    - view_analytics
+    - manage_inbox
+    - dictate_letters
+    - order_labs
+    - manage_tasks
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - manage_care_plans
+    - view_schedule
+    - triage_patients
+    - administer_medications
+    - manage_immunizations
+    - patient_education
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+    - manage_waitlist
+    - manage_recalls
+    - handle_phone_messages
+    - manage_referral_queue
+    - insurance_verification
+  admin:
+    - view_all_charts
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+    - system_configuration
+    - audit_logs
+    - manage_integrations
+    - export_data
+    - manage_roles
+
+templates:
+  custom_note_stencils:
+    - comprehensive_physical
+    - well_baby_visit
+    - prenatal_visit
+    - chronic_disease_review
+    - mental_health_assessment
+    - specialist_consult_note
+    - np_assessment
+    - procedure_note
+    - urgent_visit
+  letter_stencils:
+    - referral_letter
+    - patient_summary
+    - specialist_referral
+    - return_to_work
+  pdf_forms:
+    - wsbc_initial_report
+    - drivers_medical
+    - disability_assessment
+  macros:
+    - vitals_normal
+    - ros_negative
+    - msk_exam_normal
+    - neuro_exam_normal
+    - cardio_exam_normal
+    - resp_exam_normal
+    - abdo_exam_normal
+    - derm_exam_normal
+  aliases:
+    - bp_normal
+    - bmi_calc
+    - smoking_cessation
+    - diabetes_mgmt
+    - copd_action_plan
+    - asthma_action_plan

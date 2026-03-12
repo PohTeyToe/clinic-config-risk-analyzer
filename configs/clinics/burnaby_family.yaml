@@ -1,0 +1,124 @@
+# Burnaby Family Medical Centre - Full-featured BC family clinic, all modules
+name: "Burnaby Family Medical Centre"
+province: BC
+clinic_type: family
+provider_count: 4
+providers: [MD, MD, MD, NP]
+
+modules:
+  - ava_connect
+  - ava_scribe
+  - autochart
+  - prescribeit
+  - document_classifier
+  - pcpcm_billing_advisor
+  - patient_care_plan
+
+connect_settings:
+  auto_release_days: 90
+  messaging: multiple_providers
+  caregiver_access: true
+
+scribe_settings:
+  ai_model: advanced
+  confidential_toggle: true
+  personalized_instructions: true
+  templates:
+    - soap_standard
+    - pediatric_visit
+    - wellness_check
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - social_histories
+    - reminders
+    - prescriptions
+    - consult_requests
+
+billing:
+  - bc_msp
+  - private
+
+integrations:
+  - pharmanet
+  - prescribeit
+  - edelivery
+  - efax
+
+scheduling:
+  appointment_types:
+    - standard_visit
+    - annual_physical
+    - well_baby
+    - prenatal
+    - mental_health
+    - follow_up
+    - np_visit
+  pods: true
+  rooms_view: true
+  locum_sessions: false
+  qr_checkin: false
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+    - manage_referrals
+    - view_billing
+    - submit_billing
+    - manage_care_plans
+    - approve_documents
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+    - manage_inbox
+    - process_documents
+    - manage_care_plans
+    - view_schedule
+    - patient_education
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+    - scan_documents
+    - process_faxes
+    - manage_waitlist
+    - manage_recalls
+  admin:
+    - view_all_charts
+    - manage_users
+    - manage_billing
+    - view_reports
+    - manage_templates
+    - system_configuration
+    - audit_logs
+
+templates:
+  custom_note_stencils:
+    - comprehensive_physical
+    - well_baby_visit
+    - prenatal_visit
+    - pediatric_assessment
+    - chronic_disease_review
+  letter_stencils:
+    - referral_letter
+    - patient_summary
+    - return_to_work
+  pdf_forms:
+    - drivers_medical
+    - school_medical
+  macros:
+    - vitals_normal
+    - ros_negative
+    - msk_exam_normal
+    - neuro_exam_normal
+    - peds_exam_normal
+    - developmental_milestones
+  aliases:
+    - bp_normal
+    - bmi_calc
+    - growth_chart
+    - vaccine_schedule

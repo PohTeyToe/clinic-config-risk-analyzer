@@ -1,0 +1,63 @@
+# Kelowna Walk-In Clinic - BC walk-in with minimal connect
+name: "Kelowna Walk-In Clinic"
+province: BC
+clinic_type: walk_in
+provider_count: 2
+providers: [MD, MD]
+
+modules:
+  - ava_connect
+  - autochart
+  - document_classifier
+
+connect_settings:
+  auto_release_days: 14
+  messaging: none
+  caregiver_access: false
+
+autochart_settings:
+  enabled_categories:
+    - medical_histories
+    - prescriptions
+
+billing:
+  - bc_msp
+  - icbc
+
+integrations:
+  - pharmanet
+  - efax
+
+scheduling:
+  appointment_types:
+    - walk_in
+    - urgent_visit
+  pods: false
+  rooms_view: false
+  locum_sessions: true
+  qr_checkin: true
+
+role_permissions:
+  physician:
+    - view_all_charts
+    - edit_charts
+    - prescribe
+    - sign_notes
+  nurse:
+    - view_assigned_charts
+    - edit_vitals
+  moa:
+    - manage_schedule
+    - check_in_patients
+    - manage_demographics
+  admin:
+    - manage_users
+    - view_reports
+
+templates:
+  custom_note_stencils:
+    - walkin_encounter
+  letter_stencils: []
+  pdf_forms: []
+  macros: []
+  aliases: []
