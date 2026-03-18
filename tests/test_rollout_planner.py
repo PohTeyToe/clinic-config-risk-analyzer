@@ -6,12 +6,13 @@ import pytest
 
 from src.conflict_detector import detect_conflicts
 from src.models import (
+    Conflict,
     RolloutPlan,
     load_all_clinics,
     load_clinic,
     load_feature,
 )
-from src.rollout_planner import create_rollout_plan
+from src.rollout_planner import compute_risk_score, create_rollout_plan
 
 # ---------------------------------------------------------------------------
 # Path helpers
@@ -204,3 +205,92 @@ class TestFullRolloutPlan:
             all_assigned.extend(cohort.clinics)
         assert len(all_assigned) == 15
         assert len(set(all_assigned)) == 15
+
+
+# ---------------------------------------------------------------------------
+# Risk score formula verification
+# ---------------------------------------------------------------------------
+
+
+class TestRiskScoreFormula:
+    """Compute expected score manually and assert match."""
+
+    def test_known_values(self):
+        clinic = load_clinic(str(_FIXTURES / "full_clinic.yaml"))
+        # Full clinic: 5 providers, 4 integrations, templates:
+        # custom_note_stencils(4) + macros(3) + aliases(2) = 9 custom templates
+        conflicts = [
+            Conflict(
+                clinic_name=clinic.name,
+                clinic_file=clinic.file_name,
+                change_description="test",
+                conflict_type="breaking",
+                severity_score=10,
+                reason="test breaking",
+                affected_dimension="billing",
+            ),
+            Conflict(
+                clinic_name=clinic.name,
+                clinic_file=clinic.file_name,
+                change_description="test",
+                conflict_type="behavioral",
+                severity_score=3,
+                reason="test behavioral",
+                affected_dimension="modules",
+            ),
+            Conflict(
+                clinic_name=clinic.name,
+                clinic_file=clinic.file_name,
+                change_description="test",
+                conflict_type="cosmetic",
+                severity_score=1,
+                reason="test cosmetic",
+                affected_dimension="billing",
+            ),
+        ]
+        score = compute_risk_score(clinic, conflicts)
+        # Expected: (1*10) + (1*3) + (1*1) + (5*0.5) + (4*1) + (9*2)
+        #         = 10 + 3 + 1 + 2.5 + 4 + 18 = 38.5
+        assert score == 38.5
+
+
+# ---------------------------------------------------------------------------
+# Cohort ordering with real data
+# ---------------------------------------------------------------------------
+
+
+class TestCohortOrderingRealData:
+    """Assert cohorts are in ascending risk order using all 15 clinics."""
+
+    def test_real_data_cohort_ordering(self):
+        clinics = load_all_clinics(str(_CLINICS_DIR))
+        feature = load_feature(str(_FEATURES_DIR / "prescribing_redesign.yaml"))
+        conflicts = detect_conflicts(clinics, feature)
+        plan = create_rollout_plan(feature, clinics, conflicts)
+
+        for i in range(len(plan.cohorts) - 1):
+            current_max = max(plan.risk_scores[c] for c in plan.cohorts[i].clinics)
+            next_min = min(plan.risk_scores[c] for c in plan.cohorts[i + 1].clinics)
+            assert current_max <= next_min, (
+                f"Cohort {i} max ({current_max}) > Cohort {i + 1} min ({next_min})"
+            )
+
+
+# ---------------------------------------------------------------------------
+# Single clinic edge case
+# ---------------------------------------------------------------------------
+
+
+class TestSingleClinicPlan:
+    """Edge case: 1 clinic produces valid plan with exactly 1 cohort."""
+
+    def test_single_clinic(self):
+        clinic = load_clinic(str(_FIXTURES / "simple_clinic.yaml"))
+        feature = load_feature(str(_FIXTURES / "simple_feature.yaml"))
+        conflicts = detect_conflicts([clinic], feature)
+        plan = create_rollout_plan(feature, [clinic], conflicts)
+
+        assert plan.total_clinics == 1
+        assert len(plan.cohorts) == 1
+        assert clinic.name in plan.cohorts[0].clinics
+        assert clinic.name in plan.risk_scores

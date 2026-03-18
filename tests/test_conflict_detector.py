@@ -3,8 +3,10 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from src.conflict_detector import (
+    check_billing_incompatibility,
     check_missing_integration,
     check_module_dependency,
     check_province_mismatch,
@@ -14,6 +16,7 @@ from src.conflict_detector import (
 from src.models import (
     Change,
     FeatureChange,
+    _fix_yaml_province,
     load_all_clinics,
     load_clinic,
     load_feature,
@@ -306,3 +309,287 @@ class TestFullConflictDetection:
         # We expect at least breaking and behavioral conflicts.
         assert "breaking" in all_types
         assert "behavioral" in all_types
+
+
+# ---------------------------------------------------------------------------
+# YAML boolean province bug -- PyYAML 1.1 parses ON as True
+# ---------------------------------------------------------------------------
+
+
+class TestYamlBooleanProvinceBug:
+    """PyYAML parses ON as True. Without handling this, every Ontario clinic
+    would fail to load correctly. This test proves the fix works."""
+
+    def test_on_parsed_as_true_fixed(self):
+        raw = yaml.safe_load("province: ON")
+        assert raw["province"] is True  # PyYAML quirk
+        assert _fix_yaml_province(raw["province"]) == "ON"
+
+    def test_no_parsed_as_false_fixed(self):
+        raw = yaml.safe_load("province: NO")
+        assert raw["province"] is False
+        assert _fix_yaml_province(raw["province"]) == "NO"
+
+    def test_normal_province_unchanged(self):
+        raw = yaml.safe_load("province: BC")
+        assert _fix_yaml_province(raw["province"]) == "BC"
+
+    def test_ontario_clinics_load_correctly(self):
+        clinics = load_all_clinics(str(_CLINICS_DIR))
+        on_clinics = [c for c in clinics if c.province == "ON"]
+        assert len(on_clinics) >= 1
+        for c in on_clinics:
+            assert c.province == "ON"
+            assert isinstance(c.province, str)
+
+
+# ---------------------------------------------------------------------------
+# Scribe confidentiality + Connect auto-release interaction
+# ---------------------------------------------------------------------------
+
+
+class TestScribeConfidentialityConnectAutoRelease:
+    """If a clinic has Scribe with confidential_toggle AND Connect with
+    auto-release, the conflict detector should flag the interaction when a
+    feature changes note flow. Confidential notes auto-releasing to the
+    patient portal is a patient safety issue."""
+
+    def test_confidential_auto_release_flagged(self):
+        clinics = load_all_clinics(str(_CLINICS_DIR))
+        feature = load_feature(str(_FEATURES_DIR / "connect_messaging_overhaul.yaml"))
+        conflicts = detect_conflicts(clinics, feature)
+
+        # Find clinics that have both scribe confidential_toggle=true
+        # AND connect auto_release_days > 0.
+        dual_clinics = [
+            c
+            for c in clinics
+            if c.scribe_settings
+            and c.scribe_settings.get("confidential_toggle") is True
+            and c.connect_settings
+            and c.connect_settings.get("auto_release_days", 0) > 0
+        ]
+        assert len(dual_clinics) >= 1, "Expected at least one clinic with both features"
+
+        # Each of these clinics should have at least one conflict from the
+        # connect_messaging_overhaul feature (which changes auto-release behavior).
+        for clinic in dual_clinics:
+            assert clinic.name in conflicts, (
+                f"{clinic.name} has confidential toggle + auto-release but no conflicts"
+            )
+
+
+# ---------------------------------------------------------------------------
+# All provinces parametrized
+# ---------------------------------------------------------------------------
+
+
+class TestAllProvincesParametrized:
+    """Run province mismatch detection across all 15 real clinic configs."""
+
+    @pytest.fixture()
+    def all_clinics(self):
+        return load_all_clinics(str(_CLINICS_DIR))
+
+    @pytest.mark.parametrize("target_province", ["AB", "BC", "ON"])
+    def test_province_mismatch_fires_correctly(self, all_clinics, target_province):
+        change = Change(
+            dimension="billing",
+            field="test_billing",
+            change_type="modify",
+            description=f"Province-specific change for {target_province}",
+            old_value="old",
+            new_value="new",
+            affects_provinces=[target_province],
+            requires_modules=[],
+            requires_integrations=[],
+            breaks_templates=[],
+            permission_changes=None,
+        )
+        for clinic in all_clinics:
+            conflicts = check_province_mismatch(clinic, change)
+            if clinic.province != target_province:
+                assert len(conflicts) >= 1, (
+                    f"{clinic.name} ({clinic.province}) should flag mismatch "
+                    f"for {target_province}-only change"
+                )
+            else:
+                # Same province -- no province mismatch conflict expected
+                mismatch_conflicts = [c for c in conflicts if "province" in c.reason.lower()]
+                # Province match means no "does not include this clinic" conflict
+                assert not any(
+                    "not" in c.reason.lower() and "province" in c.reason.lower()
+                    for c in mismatch_conflicts
+                )
+
+
+# ---------------------------------------------------------------------------
+# Billing change type severity mapping
+# ---------------------------------------------------------------------------
+
+
+class TestBillingChangeTypesSeverity:
+    """Verify correct severity mapping for billing changes:
+    remove/modify = breaking(10), add = cosmetic(1) or behavioral(3)."""
+
+    @pytest.mark.parametrize(
+        "change_type,expected_type,expected_score",
+        [
+            ("remove", "breaking", 10),
+            ("modify", "breaking", 10),
+            ("rename", "breaking", 10),
+        ],
+    )
+    def test_destructive_billing_changes(self, change_type, expected_type, expected_score):
+        clinic = load_clinic(str(_FIXTURES / "full_clinic.yaml"))
+        change = Change(
+            dimension="billing",
+            field="ab_health",
+            change_type=change_type,
+            description=f"Billing {change_type} test",
+            old_value="old",
+            new_value="new",
+            affects_provinces=["all"],
+            requires_modules=[],
+            requires_integrations=[],
+            breaks_templates=[],
+            permission_changes=None,
+        )
+        conflicts = check_billing_incompatibility(clinic, change)
+        assert len(conflicts) >= 1
+        assert conflicts[0].conflict_type == expected_type
+        assert conflicts[0].severity_score == expected_score
+
+    def test_add_billing_is_cosmetic(self):
+        clinic = load_clinic(str(_FIXTURES / "full_clinic.yaml"))
+        change = Change(
+            dimension="billing",
+            field="ab_health",
+            change_type="add",
+            description="Add new billing code",
+            old_value=None,
+            new_value="new_code",
+            affects_provinces=["all"],
+            requires_modules=[],
+            requires_integrations=[],
+            breaks_templates=[],
+            permission_changes=None,
+        )
+        conflicts = check_billing_incompatibility(clinic, change)
+        assert len(conflicts) >= 1
+        assert conflicts[0].conflict_type == "cosmetic"
+        assert conflicts[0].severity_score == 1
+
+
+# ---------------------------------------------------------------------------
+# Missing integration with no module overlap -- guard logic
+# ---------------------------------------------------------------------------
+
+
+class TestMissingIntegrationNoModuleOverlap:
+    """When a change requires integrations the clinic lacks BUT the clinic
+    does not use affected modules, no breaking conflict should fire."""
+
+    def test_no_conflict_when_modules_unaffected(self):
+        clinic = load_clinic(str(_FIXTURES / "simple_clinic.yaml"))
+        # Simple clinic has ava_scribe only. Change requires prescribeit
+        # integration AND autochart module (which simple clinic lacks).
+        change = Change(
+            dimension="autochart_settings",
+            field="categories",
+            change_type="modify",
+            description="AutoChart upgrade requiring prescribeit",
+            old_value="old",
+            new_value="new",
+            affects_provinces=["all"],
+            requires_modules=["autochart"],
+            requires_integrations=["prescribeit"],
+            breaks_templates=[],
+            permission_changes=None,
+        )
+        conflicts = check_missing_integration(clinic, change)
+        # Clinic does not use autochart, so even though it lacks prescribeit,
+        # the missing integration check should not fire as breaking.
+        assert len(conflicts) == 0
+
+
+# ---------------------------------------------------------------------------
+# Malformed clinic YAML -- defensive negative tests
+# ---------------------------------------------------------------------------
+
+
+class TestMalformedClinicYaml:
+    """In production, clinic configs could have missing fields or unusual values.
+    These tests verify the system handles edge cases gracefully."""
+
+    def test_empty_modules_list(self, tmp_path):
+        config = tmp_path / "empty_modules.yaml"
+        config.write_text(
+            "name: Empty Modules Clinic\n"
+            "province: AB\n"
+            "clinic_type: family\n"
+            "provider_count: 1\n"
+            "providers: [MD]\n"
+            "modules: []\n"
+            "billing: [ab_health]\n"
+            "integrations: []\n"
+            "scheduling:\n"
+            "  appointment_types: [standard_visit]\n"
+            "role_permissions: {}\n"
+            "templates: {}\n"
+        )
+        clinic = load_clinic(str(config))
+        assert clinic.modules == []
+        assert clinic.name == "Empty Modules Clinic"
+
+    def test_missing_optional_fields(self, tmp_path):
+        config = tmp_path / "minimal.yaml"
+        config.write_text("name: Minimal Clinic\nprovince: BC\nclinic_type: solo\n")
+        clinic = load_clinic(str(config))
+        assert clinic.name == "Minimal Clinic"
+        assert clinic.province == "BC"
+        assert clinic.modules == []
+        assert clinic.billing == []
+
+    def test_detect_conflicts_with_empty_clinic(self, tmp_path):
+        config = tmp_path / "bare.yaml"
+        config.write_text("name: Bare Clinic\nprovince: AB\nclinic_type: family\n")
+        clinic = load_clinic(str(config))
+        feature = load_feature(str(_FIXTURES / "simple_feature.yaml"))
+        # Should not crash even with minimal config.
+        result = detect_conflicts([clinic], feature)
+        assert isinstance(result, dict)
+
+
+# ---------------------------------------------------------------------------
+# Conflict invariants across all real data
+# ---------------------------------------------------------------------------
+
+
+class TestConflictInvariants:
+    """Run detect_conflicts with all real data and verify structural invariants
+    on every conflict produced."""
+
+    def test_all_conflicts_have_required_fields(self):
+        clinics = load_all_clinics(str(_CLINICS_DIR))
+        valid_types = {"breaking", "behavioral", "cosmetic"}
+        valid_scores = {1, 3, 10}
+
+        for feature_path in sorted(_FEATURES_DIR.iterdir()):
+            if feature_path.suffix not in (".yaml", ".yml"):
+                continue
+            feature = load_feature(str(feature_path))
+            conflicts = detect_conflicts(clinics, feature)
+
+            for clinic_name, clinic_conflicts in conflicts.items():
+                for c in clinic_conflicts:
+                    assert c.clinic_name, "Empty clinic_name"
+                    assert c.clinic_name == clinic_name
+                    assert c.conflict_type in valid_types, (
+                        f"Invalid conflict_type: {c.conflict_type}"
+                    )
+                    assert c.severity_score in valid_scores, (
+                        f"Invalid severity_score: {c.severity_score}"
+                    )
+                    assert c.reason, "Empty reason"
+                    assert c.affected_dimension, "Empty affected_dimension"
