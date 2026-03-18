@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
-
 
 # PyYAML (YAML 1.1) treats ON/NO/YES/OFF as booleans.  Province codes
 # like "ON" (Ontario) and "NO" (hypothetical) get parsed as True/False.
@@ -36,17 +35,17 @@ class ClinicConfig:
     province: str
     clinic_type: str
     provider_count: int
-    providers: List[str]
-    modules: List[str]
-    connect_settings: Optional[Dict[str, Any]]
-    scribe_settings: Optional[Dict[str, Any]]
-    autochart_settings: Optional[Dict[str, Any]]
-    billing: List[str]
-    integrations: List[str]
-    scheduling: Dict[str, Any]
-    role_permissions: Dict[str, List[str]]
-    templates: Dict[str, List[str]]
-    panelling: Optional[Dict[str, Any]]
+    providers: list[str]
+    modules: list[str]
+    connect_settings: dict[str, Any] | None
+    scribe_settings: dict[str, Any] | None
+    autochart_settings: dict[str, Any] | None
+    billing: list[str]
+    integrations: list[str]
+    scheduling: dict[str, Any]
+    role_permissions: dict[str, list[str]]
+    templates: dict[str, list[str]]
+    panelling: dict[str, Any] | None
     file_name: str
 
 
@@ -55,16 +54,16 @@ class Change:
     """A single change within a feature release."""
 
     dimension: str
-    field: Optional[str]
+    field: str | None
     change_type: str  # add / modify / remove / rename
     description: str
-    old_value: Optional[Any]
-    new_value: Optional[Any]
-    affects_provinces: List[str]  # province codes or ["all"]
-    requires_modules: List[str]
-    requires_integrations: List[str]
-    breaks_templates: List[str]
-    permission_changes: Optional[Dict[str, str]]
+    old_value: Any | None
+    new_value: Any | None
+    affects_provinces: list[str]  # province codes or ["all"]
+    requires_modules: list[str]
+    requires_integrations: list[str]
+    breaks_templates: list[str]
+    permission_changes: dict[str, str] | None
 
 
 @dataclass
@@ -74,7 +73,7 @@ class FeatureChange:
     name: str
     description: str
     version: str
-    changes: List[Change]
+    changes: list[Change]
 
 
 @dataclass
@@ -95,10 +94,10 @@ class RolloutCohort:
     """A group of clinics scheduled to receive a feature in the same wave."""
 
     name: str
-    clinics: List[str]
+    clinics: list[str]
     risk_range: str
     gate: str
-    test_cases: List[Dict[str, str]] = field(default_factory=list)
+    test_cases: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -107,15 +106,16 @@ class RolloutPlan:
 
     feature_name: str
     total_clinics: int
-    cohorts: List[RolloutCohort]
-    risk_scores: Dict[str, float]
+    cohorts: list[RolloutCohort]
+    risk_scores: dict[str, float]
 
 
 # ---------------------------------------------------------------------------
 # YAML loaders
 # ---------------------------------------------------------------------------
 
-def _normalize_province_list(value: Any) -> List[str]:
+
+def _normalize_province_list(value: Any) -> list[str]:
     """Convert affects_provinces from YAML into a consistent list.
 
     Handles the case where the value is the string "all" or a list of
@@ -135,7 +135,7 @@ def _normalize_province_list(value: Any) -> List[str]:
 
 def load_clinic(path: str) -> ClinicConfig:
     """Load a single clinic YAML file and return a ClinicConfig."""
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
 
     modules = data.get("modules", [])
@@ -162,10 +162,10 @@ def load_clinic(path: str) -> ClinicConfig:
 
 def load_feature(path: str) -> FeatureChange:
     """Load a feature YAML file and return a FeatureChange."""
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         data = yaml.safe_load(fh)
 
-    changes: List[Change] = []
+    changes: list[Change] = []
     for entry in data.get("changes", []):
         changes.append(
             Change(
@@ -191,9 +191,9 @@ def load_feature(path: str) -> FeatureChange:
     )
 
 
-def load_all_clinics(directory: str = "configs/clinics") -> List[ClinicConfig]:
+def load_all_clinics(directory: str = "configs/clinics") -> list[ClinicConfig]:
     """Load every .yaml file in *directory* and return a list of ClinicConfigs."""
-    clinics: List[ClinicConfig] = []
+    clinics: list[ClinicConfig] = []
     for fname in sorted(os.listdir(directory)):
         if fname.endswith(".yaml") or fname.endswith(".yml"):
             clinics.append(load_clinic(os.path.join(directory, fname)))

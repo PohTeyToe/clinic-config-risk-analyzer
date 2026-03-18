@@ -5,14 +5,12 @@ Uses simple ASCII formatting (dashes and pipes). No box-drawing characters.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 from .models import ClinicConfig, Conflict, FeatureChange, RolloutPlan
-
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _pad(text: str, width: int) -> str:
     """Left-align *text* in a field of *width* characters."""
@@ -29,10 +27,11 @@ def _header(title: str) -> str:
 # Conflict report
 # ---------------------------------------------------------------------------
 
+
 def print_conflict_report(
     feature: FeatureChange,
-    conflicts_by_clinic: Dict[str, List[Conflict]],
-    clinics: Optional[List[ClinicConfig]] = None,
+    conflicts_by_clinic: dict[str, list[Conflict]],
+    clinics: list[ClinicConfig] | None = None,
 ) -> None:
     """Print a complete conflict report to stdout.
 
@@ -41,7 +40,7 @@ def print_conflict_report(
     """
 
     # Build province lookup from clinics if available.
-    province_map: Dict[str, str] = {}
+    province_map: dict[str, str] = {}
     if clinics:
         for c in clinics:
             province_map[c.name] = c.province
@@ -133,6 +132,7 @@ def print_conflict_report(
 # Rollout report
 # ---------------------------------------------------------------------------
 
+
 def print_rollout_report(plan: RolloutPlan) -> None:
     """Print a complete rollout plan to stdout."""
 
@@ -154,7 +154,7 @@ def print_rollout_report(plan: RolloutPlan) -> None:
     sep = "-" * len(hdr)
 
     # Build a lookup: clinic_name -> cohort_name.
-    cohort_lookup: Dict[str, str] = {}
+    cohort_lookup: dict[str, str] = {}
     for cohort in plan.cohorts:
         for cname in cohort.clinics:
             cohort_lookup[cname] = cohort.name

@@ -4,17 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from src.conflict_detector import detect_conflicts
 from src.models import (
-    ClinicConfig,
-    Conflict,
-    FeatureChange,
     RolloutPlan,
     load_all_clinics,
     load_clinic,
     load_feature,
 )
-from src.conflict_detector import detect_conflicts
-from src.rollout_planner import compute_risk_score, create_rollout_plan
+from src.rollout_planner import create_rollout_plan
 
 # ---------------------------------------------------------------------------
 # Path helpers
@@ -30,6 +27,7 @@ _FEATURES_DIR = _PROJECT_ROOT / "features"
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _load_fixture_clinics_and_feature():
     """Load fixture clinics and the simple feature for testing."""
@@ -53,11 +51,12 @@ def _make_plan_from_fixtures():
 # Risk scores
 # ---------------------------------------------------------------------------
 
+
 class TestRiskScoreNonnegative:
     """All risk scores must be non-negative."""
 
     def test_risk_score_nonnegative(self):
-        plan, clinics, conflicts = _make_plan_from_fixtures()
+        plan, _clinics, _conflicts = _make_plan_from_fixtures()
         for name, score in plan.risk_scores.items():
             assert score >= 0, f"Risk score for {name} is negative: {score}"
 
@@ -65,6 +64,7 @@ class TestRiskScoreNonnegative:
 # ---------------------------------------------------------------------------
 # All clinics assigned
 # ---------------------------------------------------------------------------
+
 
 class TestAllClinicsAssigned:
     """Every clinic should appear in exactly one cohort."""
@@ -85,6 +85,7 @@ class TestAllClinicsAssigned:
 # Cohort ordering
 # ---------------------------------------------------------------------------
 
+
 class TestCohortOrdering:
     """Earlier cohorts should have lower or equal max risk scores."""
 
@@ -93,21 +94,18 @@ class TestCohortOrdering:
         if len(plan.cohorts) < 2:
             pytest.skip("Not enough cohorts to compare ordering")
         for i in range(len(plan.cohorts) - 1):
-            current_scores = [
-                plan.risk_scores[c] for c in plan.cohorts[i].clinics
-            ]
-            next_scores = [
-                plan.risk_scores[c] for c in plan.cohorts[i + 1].clinics
-            ]
+            current_scores = [plan.risk_scores[c] for c in plan.cohorts[i].clinics]
+            next_scores = [plan.risk_scores[c] for c in plan.cohorts[i + 1].clinics]
             assert max(current_scores) <= max(next_scores), (
                 f"Cohort {i} max score ({max(current_scores)}) > "
-                f"Cohort {i+1} max score ({max(next_scores)})"
+                f"Cohort {i + 1} max score ({max(next_scores)})"
             )
 
 
 # ---------------------------------------------------------------------------
 # Test case specificity
 # ---------------------------------------------------------------------------
+
 
 class TestTestCaseSpecificity:
     """Test cases should reference actual clinic names and specific details."""
@@ -126,14 +124,14 @@ class TestTestCaseSpecificity:
                     for cname in clinic_names
                 )
                 assert mentions_clinic, (
-                    f"Test case '{test_case['name']}' does not reference "
-                    f"any actual clinic name"
+                    f"Test case '{test_case['name']}' does not reference any actual clinic name"
                 )
 
 
 # ---------------------------------------------------------------------------
 # Zero-conflict clinics
 # ---------------------------------------------------------------------------
+
 
 class TestZeroConflictClinics:
     """Clinics with zero conflicts should still appear in the plan (cohort 1)."""
@@ -144,23 +142,20 @@ class TestZeroConflictClinics:
         plan = create_rollout_plan(feature, clinics, conflicts)
 
         # Find clinics with no conflicts.
-        zero_conflict_names = [
-            c.name for c in clinics if c.name not in conflicts
-        ]
+        zero_conflict_names = [c.name for c in clinics if c.name not in conflicts]
 
         # All zero-conflict clinics must be in the plan.
         all_assigned = []
         for cohort in plan.cohorts:
             all_assigned.extend(cohort.clinics)
         for name in zero_conflict_names:
-            assert name in all_assigned, (
-                f"Zero-conflict clinic {name} missing from plan"
-            )
+            assert name in all_assigned, f"Zero-conflict clinic {name} missing from plan"
 
 
 # ---------------------------------------------------------------------------
 # Rollout plan structure
 # ---------------------------------------------------------------------------
+
 
 class TestRolloutPlanStructure:
     """The plan object should have all required fields."""
@@ -187,6 +182,7 @@ class TestRolloutPlanStructure:
 # ---------------------------------------------------------------------------
 # Full rollout plan with real data
 # ---------------------------------------------------------------------------
+
 
 class TestFullRolloutPlan:
     """Generate a full plan from all real clinics and prescribing_redesign."""

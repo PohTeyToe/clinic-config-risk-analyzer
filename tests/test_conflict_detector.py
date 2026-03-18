@@ -4,22 +4,19 @@ from pathlib import Path
 
 import pytest
 
-from src.models import (
-    Change,
-    ClinicConfig,
-    Conflict,
-    FeatureChange,
-    load_all_clinics,
-    load_clinic,
-    load_feature,
-)
 from src.conflict_detector import (
-    check_billing_incompatibility,
     check_missing_integration,
     check_module_dependency,
     check_province_mismatch,
     check_template_breakage,
     detect_conflicts,
+)
+from src.models import (
+    Change,
+    FeatureChange,
+    load_all_clinics,
+    load_clinic,
+    load_feature,
 )
 
 # ---------------------------------------------------------------------------
@@ -36,6 +33,7 @@ _FEATURES_DIR = _PROJECT_ROOT / "features"
 # ---------------------------------------------------------------------------
 # Loading fixtures
 # ---------------------------------------------------------------------------
+
 
 class TestLoadSimpleClinic:
     """Verify simple_clinic.yaml loads correctly."""
@@ -70,6 +68,7 @@ class TestLoadSimpleFeature:
 # Province filtering
 # ---------------------------------------------------------------------------
 
+
 class TestProvinceFiltering:
     """Changes targeting specific provinces should flag mismatches."""
 
@@ -92,14 +91,14 @@ class TestProvinceFiltering:
         conflicts = check_province_mismatch(bc_clinic, ab_only_change)
         assert len(conflicts) >= 1
         assert any(
-            "province" in c.reason.lower() or c.conflict_type == "behavioral"
-            for c in conflicts
+            "province" in c.reason.lower() or c.conflict_type == "behavioral" for c in conflicts
         )
 
 
 # ---------------------------------------------------------------------------
 # Severity classification
 # ---------------------------------------------------------------------------
+
 
 class TestSeverityClassification:
     """Verify severity scores map correctly to conflict types."""
@@ -123,6 +122,7 @@ class TestSeverityClassification:
 # ---------------------------------------------------------------------------
 # Zero conflicts
 # ---------------------------------------------------------------------------
+
 
 class TestZeroConflicts:
     """A feature that does not touch any clinic dimension produces no conflicts."""
@@ -164,6 +164,7 @@ class TestZeroConflicts:
 # Module dependency
 # ---------------------------------------------------------------------------
 
+
 class TestModuleDependency:
     """Feature requiring a module the clinic lacks should flag a conflict."""
 
@@ -191,6 +192,7 @@ class TestModuleDependency:
 # ---------------------------------------------------------------------------
 # Template breakage
 # ---------------------------------------------------------------------------
+
 
 class TestTemplateBreakage:
     """Feature breaking a template the clinic uses should flag breaking conflict."""
@@ -220,6 +222,7 @@ class TestTemplateBreakage:
 # ---------------------------------------------------------------------------
 # Missing integration
 # ---------------------------------------------------------------------------
+
 
 class TestMissingIntegration:
     """Feature requiring an integration the clinic lacks should flag breaking."""
@@ -251,6 +254,7 @@ class TestMissingIntegration:
 # Loading all real configs
 # ---------------------------------------------------------------------------
 
+
 class TestAllClinicsLoad:
     """All 15 real clinic YAML files should load without errors."""
 
@@ -280,6 +284,7 @@ class TestAllFeaturesLoad:
 # ---------------------------------------------------------------------------
 # Full conflict detection against real data
 # ---------------------------------------------------------------------------
+
 
 class TestFullConflictDetection:
     """Run full conflict detection with all clinics and prescribing_redesign."""

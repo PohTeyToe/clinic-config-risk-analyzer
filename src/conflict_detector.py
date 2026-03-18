@@ -9,22 +9,20 @@ Run directly:
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from .models import Change, ClinicConfig, Conflict, FeatureChange
-
 
 # ---------------------------------------------------------------------------
 # Individual check functions -- each returns a (possibly empty) list of
 # Conflict objects for ONE clinic / ONE change pair.
 # ---------------------------------------------------------------------------
 
+
 def check_province_mismatch(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when a change targets provinces that do not include this clinic."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     provinces = change.affects_provinces
 
     if "all" in provinces:
@@ -51,39 +49,37 @@ def check_province_mismatch(
 
     # Province matches -- check if the change affects province-specific
     # billing or integrations that the clinic actually uses.
-    if change.dimension == "billing" and change.field:
-        if change.field in clinic.billing:
-            conflicts.append(
-                Conflict(
-                    clinic_name=clinic.name,
-                    clinic_file=clinic.file_name,
-                    change_description=change.description,
-                    conflict_type="breaking",
-                    severity_score=10,
-                    reason=(
-                        f"Clinic uses province-specific billing type "
-                        f"'{change.field}' which is modified by this change."
-                    ),
-                    affected_dimension=change.dimension,
-                )
+    if change.dimension == "billing" and change.field and change.field in clinic.billing:
+        conflicts.append(
+            Conflict(
+                clinic_name=clinic.name,
+                clinic_file=clinic.file_name,
+                change_description=change.description,
+                conflict_type="breaking",
+                severity_score=10,
+                reason=(
+                    f"Clinic uses province-specific billing type "
+                    f"'{change.field}' which is modified by this change."
+                ),
+                affected_dimension=change.dimension,
             )
+        )
 
-    if change.dimension == "integrations" and change.field:
-        if change.field in clinic.integrations:
-            conflicts.append(
-                Conflict(
-                    clinic_name=clinic.name,
-                    clinic_file=clinic.file_name,
-                    change_description=change.description,
-                    conflict_type="breaking",
-                    severity_score=10,
-                    reason=(
-                        f"Clinic uses province-specific integration "
-                        f"'{change.field}' which is modified by this change."
-                    ),
-                    affected_dimension=change.dimension,
-                )
+    if change.dimension == "integrations" and change.field and change.field in clinic.integrations:
+        conflicts.append(
+            Conflict(
+                clinic_name=clinic.name,
+                clinic_file=clinic.file_name,
+                change_description=change.description,
+                conflict_type="breaking",
+                severity_score=10,
+                reason=(
+                    f"Clinic uses province-specific integration "
+                    f"'{change.field}' which is modified by this change."
+                ),
+                affected_dimension=change.dimension,
             )
+        )
 
     return conflicts
 
@@ -91,9 +87,9 @@ def check_province_mismatch(
 def check_missing_integration(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when a change requires integrations the clinic does not have."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     if not change.requires_integrations:
         return conflicts
 
@@ -128,9 +124,9 @@ def check_missing_integration(
 def check_module_dependency(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when a change requires modules the clinic does not have."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     if not change.requires_modules:
         return conflicts
 
@@ -163,10 +159,7 @@ def check_module_dependency(
                 change_description=change.description,
                 conflict_type="behavioral",
                 severity_score=3,
-                reason=(
-                    f"Clinic lacks module(s) {missing}; "
-                    f"this change will not take effect."
-                ),
+                reason=(f"Clinic lacks module(s) {missing}; this change will not take effect."),
                 affected_dimension=change.dimension,
             )
         )
@@ -177,14 +170,14 @@ def check_module_dependency(
 def check_template_breakage(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when a change breaks templates the clinic uses."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     if not change.breaks_templates:
         return conflicts
 
     # Gather every custom template name the clinic has.
-    clinic_templates: List[str] = []
+    clinic_templates: list[str] = []
     for key in ("custom_note_stencils", "letter_stencils", "pdf_forms", "macros", "aliases"):
         clinic_templates.extend(clinic.templates.get(key, []))
 
@@ -215,9 +208,9 @@ def check_template_breakage(
 def check_role_permission_conflict(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when permission changes conflict with the clinic's role setup."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     if not change.permission_changes:
         return conflicts
 
@@ -233,10 +226,7 @@ def check_role_permission_conflict(
                     change_description=change.description,
                     conflict_type="behavioral",
                     severity_score=3,
-                    reason=(
-                        f"Change modifies role '{role}' but clinic "
-                        f"does not define that role."
-                    ),
+                    reason=(f"Change modifies role '{role}' but clinic does not define that role."),
                     affected_dimension=change.dimension,
                 )
             )
@@ -287,9 +277,9 @@ def check_role_permission_conflict(
 def check_billing_incompatibility(
     clinic: ClinicConfig,
     change: Change,
-) -> List[Conflict]:
+) -> list[Conflict]:
     """Flag when a billing change affects billing types the clinic uses."""
-    conflicts: List[Conflict] = []
+    conflicts: list[Conflict] = []
     if change.dimension != "billing":
         return conflicts
 
@@ -308,8 +298,7 @@ def check_billing_incompatibility(
                 conflict_type="breaking",
                 severity_score=10,
                 reason=(
-                    f"Billing type '{change.field}' is being removed "
-                    f"but clinic actively uses it."
+                    f"Billing type '{change.field}' is being removed but clinic actively uses it."
                 ),
                 affected_dimension=change.dimension,
             )
@@ -331,9 +320,7 @@ def check_billing_incompatibility(
         )
     elif change.change_type == "add":
         # Adding a new billing code is cosmetic unless dependencies are missing.
-        missing_int = [
-            i for i in change.requires_integrations if i not in clinic.integrations
-        ]
+        missing_int = [i for i in change.requires_integrations if i not in clinic.integrations]
         if missing_int:
             conflicts.append(
                 Conflict(
@@ -372,6 +359,7 @@ def check_billing_incompatibility(
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _clinic_uses_dimension(clinic: ClinicConfig, change: Change) -> bool:
     """Return True if the clinic actively uses the dimension affected by the change."""
     dim = change.dimension
@@ -409,18 +397,18 @@ ALL_CHECKS = [
 
 
 def detect_conflicts(
-    clinics: List[ClinicConfig],
+    clinics: list[ClinicConfig],
     feature: FeatureChange,
-) -> Dict[str, List[Conflict]]:
+) -> dict[str, list[Conflict]]:
     """Run every check for every clinic/change pair.
 
     Returns a dict mapping clinic name to its list of Conflict objects.
     Only clinics with at least one conflict are included.
     """
-    results: Dict[str, List[Conflict]] = {}
+    results: dict[str, list[Conflict]] = {}
 
     for clinic in clinics:
-        clinic_conflicts: List[Conflict] = []
+        clinic_conflicts: list[Conflict] = []
         for change in feature.changes:
             for check_fn in ALL_CHECKS:
                 clinic_conflicts.extend(check_fn(clinic, change))
