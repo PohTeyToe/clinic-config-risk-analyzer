@@ -123,6 +123,35 @@ Create a YAML file in `configs/clinics/` following the schema in `configs/schema
 
 Create a YAML file in `features/` with the change specification format. Each change entry specifies the affected dimension, change type, province scope, module and integration requirements, template impacts, and permission modifications. See existing features for the structure.
 
+## HTML Report
+
+Generate an interactive HTML report for stakeholder review:
+
+```bash
+make report FEATURE=prescribing_redesign
+# Opens report.html with summary stats, province filter, risk sorting,
+# and expandable clinic details
+```
+
+## Development
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Quality checks
+make lint          # ruff check + format
+make typecheck     # mypy strict mode
+make coverage      # pytest with 90% coverage threshold
+make qa            # lint + typecheck + coverage (all three)
+
+# E2E tests (Playwright)
+python -m playwright install chromium
+make e2e
+```
+
+See [TESTING.md](TESTING.md) for the full testing strategy and CI pipeline documentation.
+
 ## Design Decisions
 
 See [DECISIONS.md](DECISIONS.md) for assumptions, tradeoffs, and areas of uncertainty.

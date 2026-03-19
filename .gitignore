@@ -13,6 +13,7 @@ env/
 .env
 *.pyc
 .mypy_cache/
+.coverage
 report.html
 test-results/
 htmlcov/
