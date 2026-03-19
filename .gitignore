@@ -13,3 +13,7 @@ env/
 .env
 *.pyc
 .mypy_cache/
+report.html
+test-results/
+htmlcov/
+.ruff_cache/

@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 
 from src.conflict_detector import detect_conflicts
+from src.html_report import generate_html_report
 from src.models import load_all_clinics, load_feature
 from src.report import print_conflict_report, print_rollout_report
 from src.rollout_planner import create_rollout_plan
@@ -111,3 +112,23 @@ class TestReportOutput:
         output = captured.getvalue()
         assert plan.feature_name in output
         assert "Cohort" in output
+
+
+class TestHtmlReport:
+    """Verify the HTML report generates correctly for each feature."""
+
+    @pytest.mark.parametrize(
+        "feature_path",
+        _FEATURE_FILES,
+        ids=[f.stem for f in _FEATURE_FILES],
+    )
+    def test_html_report_generation(self, all_clinics, feature_path, tmp_path):
+        feature = load_feature(str(feature_path))
+        out = tmp_path / "report.html"
+        result = generate_html_report(feature, all_clinics, out)
+        assert result.exists()
+        html = result.read_text(encoding="utf-8")
+        assert feature.name in html
+        assert "clinic-card" in html
+        # Should have all 15 clinics represented.
+        assert html.count('class="clinic-card"') == 15

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ feature.name }} - Risk Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1a1a1a; max-width: 1100px; margin: 0 auto; padding: 1.5rem; background: #f8f9fa; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #555; margin-bottom: 1.5rem; }
+  .stats { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 0.75rem 1rem; min-width: 140px; text-align: center; }
+  .stat-card .number { font-size: 1.75rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.8rem; color: #555; text-transform: uppercase; }
+  .stat-card.breaking .number { color: #c0392b; }
+  .stat-card.behavioral .number { color: #e67e22; }
+  .stat-card.cosmetic .number { color: #7f8c8d; }
+  .controls { display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center; flex-wrap: wrap; }
+  select, button { padding: 0.4rem 0.75rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; background: #fff; cursor: pointer; }
+  button.active { background: #2c3e50; color: #fff; border-color: #2c3e50; }
+  .clinic-card { background: #fff; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 0.75rem; overflow: hidden; }
+  .clinic-header { padding: 0.75rem 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .clinic-header:hover { background: #f0f0f0; }
+  .clinic-name { font-weight: 600; }
+  .clinic-meta { font-size: 0.8rem; color: #555; display: flex; gap: 1rem; }
+  .clinic-details { padding: 0 1rem 0.75rem; display: none; border-top: 1px solid #eee; }
+  .clinic-details.open { display: block; padding-top: 0.75rem; }
+  .conflict-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .conflict-table th { text-align: left; padding: 0.3rem 0.5rem; border-bottom: 2px solid #ddd; font-weight: 600; }
+  .conflict-table td { padding: 0.3rem 0.5rem; border-bottom: 1px solid #eee; vertical-align: top; }
+  .badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; color: #fff; }
+  .badge.breaking { background: #c0392b; }
+  .badge.behavioral { background: #e67e22; }
+  .badge.cosmetic { background: #95a5a6; }
+  .rollout-section { margin-top: 2rem; }
+  .cohort { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 1rem; margin-bottom: 0.75rem; }
+  .cohort h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+  .cohort .gate { font-size: 0.85rem; color: #555; margin-bottom: 0.5rem; }
+  .cohort .clinics { font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<h1>{{ feature.name }}</h1>
+<p class="subtitle">Version {{ feature.version }} - {{ total_clinics }} clinics analyzed</p>
+
+<div class="stats">
+  <div class="stat-card breaking"><div class="number">{{ breaking_count }}</div><div class="label">Breaking</div></div>
+  <div class="stat-card behavioral"><div class="number">{{ behavioral_count }}</div><div class="label">Behavioral</div></div>
+  <div class="stat-card cosmetic"><div class="number">{{ cosmetic_count }}</div><div class="label">Cosmetic</div></div>
+  <div class="stat-card"><div class="number">{{ total_clinics }}</div><div class="label">Clinics</div></div>
+</div>
+
+<div class="controls">
+  <label>Province: <select id="province-filter">
+    <option value="all">All</option>
+    {% for prov in provinces %}<option value="{{ prov }}">{{ prov }}</option>{% endfor %}
+  </select></label>
+  <button id="sort-risk-desc" class="active">Risk (high-low)</button>
+  <button id="sort-risk-asc">Risk (low-high)</button>
+  <button id="sort-name">Name</button>
+</div>
+
+<div id="clinic-list">
+{% for clinic in clinic_data %}
+<div class="clinic-card" data-province="{{ clinic.province }}" data-risk="{{ clinic.risk_score }}" data-name="{{ clinic.name }}">
+  <div class="clinic-header" onclick="toggleDetails(this)">
+    <span class="clinic-name">{{ clinic.name }}</span>
+    <span class="clinic-meta">
+      <span>{{ clinic.province }}</span>
+      <span>Risk: {{ clinic.risk_score }}</span>
+      <span>{{ clinic.breaking }} breaking</span>
+    </span>
+  </div>
+  <div class="clinic-details">
+    {% if clinic.conflicts %}
+    <table class="conflict-table">
+      <thead><tr><th>Type</th><th>Dimension</th><th>Reason</th></tr></thead>
+      <tbody>
+      {% for c in clinic.conflicts %}
+      <tr>
+        <td><span class="badge {{ c.conflict_type }}">{{ c.conflict_type }}</span></td>
+        <td>{{ c.affected_dimension }}</td>
+        <td>{{ c.reason }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No conflicts detected for this clinic.</p>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{% if plan %}
+<div class="rollout-section">
+<h2>Rollout Plan</h2>
+{% for cohort in plan.cohorts %}
+<div class="cohort">
+  <h3>{{ cohort.name }}</h3>
+  <div class="gate">Gate: {{ cohort.gate }}</div>
+  <div class="clinics">Risk range: {{ cohort.risk_range }} | Clinics: {{ cohort.clinics | join(", ") }}</div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+<script>
+function toggleDetails(header) {
+  var details = header.nextElementSibling;
+  details.classList.toggle("open");
+}
+
+document.getElementById("province-filter").addEventListener("change", function() {
+  var val = this.value;
+  var cards = document.querySelectorAll(".clinic-card");
+  cards.forEach(function(card) {
+    card.style.display = (val === "all" || card.dataset.province === val) ? "" : "none";
+  });
+});
+
+function sortCards(compareFn) {
+  var list = document.getElementById("clinic-list");
+  var cards = Array.from(list.querySelectorAll(".clinic-card"));
+  cards.sort(compareFn);
+  cards.forEach(function(card) { list.appendChild(card); });
+}
+
+function setActiveSort(btn) {
+  document.querySelectorAll(".controls button").forEach(function(b) { b.classList.remove("active"); });
+  btn.classList.add("active");
+}
+
+document.getElementById("sort-risk-desc").addEventListener("click", function() {
+  setActiveSort(this);
+  sortCards(function(a, b) { return parseFloat(b.dataset.risk) - parseFloat(a.dataset.risk); });
+});
+document.getElementById("sort-risk-asc").addEventListener("click", function() {
+  setActiveSort(this);
+  sortCards(function(a, b) { return parseFloat(a.dataset.risk) - parseFloat(b.dataset.risk); });
+});
+document.getElementById("sort-name").addEventListener("click", function() {
+  setActiveSort(this);
+  sortCards(function(a, b) { return a.dataset.name.localeCompare(b.dataset.name); });
+});
+</script>
+</body>
+</html>
